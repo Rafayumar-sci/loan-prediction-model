@@ -133,11 +133,21 @@ if st.button("🔮 Predict Loan Approval", use_container_width=True):
         df = pd.DataFrame([input_data])
 
         # Encode categorical variables
-        categorical_cols = ['person_home_ownership',
-                            'loan_intent', 'loan_grade', 'cb_person_default_on_file']
-        for col in categorical_cols:
-            if col in label_encoders:
-                df[col] = label_encoders[col].transform(df[col])
+        # Hardcoded mappings to ensure consistency
+        home_ownership_mapping = {"RENT": 0,
+                                  "OWN": 1, "MORTGAGE": 2, "OTHER": 3}
+        loan_intent_mapping = {"PERSONAL": 0, "EDUCATION": 1, "MEDICAL": 2,
+                               "VENTURE": 3, "HOMEIMPROVEMENT": 4, "DEBTCONSOLIDATION": 5}
+        loan_grade_mapping = {"A": 0, "B": 1,
+                              "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
+        default_mapping = {"N": 0, "Y": 1}
+
+        df['person_home_ownership'] = df['person_home_ownership'].map(
+            home_ownership_mapping)
+        df['loan_intent'] = df['loan_intent'].map(loan_intent_mapping)
+        df['loan_grade'] = df['loan_grade'].map(loan_grade_mapping)
+        df['cb_person_default_on_file'] = df['cb_person_default_on_file'].map(
+            default_mapping)
 
         # Ensure all data is numerical
         df = df.astype(float)
