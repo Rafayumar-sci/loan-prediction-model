@@ -91,6 +91,18 @@ with col2:
         help="Has the person defaulted on a loan before?"
     )
 
+    person_gender = st.selectbox(
+        "Gender",
+        options=["Male", "Female"],
+        help="Applicant's gender"
+    )
+
+    person_education = st.selectbox(
+        "Education Level",
+        options=["High School", "Bachelor", "Master", "PhD"],
+        help="Highest education level"
+    )
+
 # Additional numerical inputs
 loan_percent_income = st.slider(
     "Loan Percent Income (%)",
@@ -110,6 +122,15 @@ cb_person_cred_hist_length = st.number_input(
     help="Length of credit history"
 )
 
+loan_term = st.number_input(
+    "Loan Term (months)",
+    min_value=12,
+    max_value=360,
+    value=36,
+    step=12,
+    help="Loan repayment term in months"
+)
+
 # Make prediction
 st.markdown("---")
 
@@ -126,7 +147,10 @@ if st.button("🔮 Predict Loan Approval", use_container_width=True):
             'loan_amnt': loan_amnt,
             'loan_percent_income': loan_percent_income / 100,  # Convert to decimal
             'cb_person_default_on_file': cb_person_default_on_file,
-            'cb_person_cred_hist_length': cb_person_cred_hist_length
+            'cb_person_cred_hist_length': cb_person_cred_hist_length,
+            'person_gender': person_gender,
+            'person_education': person_education,
+            'loan_term': loan_term
         }
 
         # Create DataFrame
@@ -141,6 +165,9 @@ if st.button("🔮 Predict Loan Approval", use_container_width=True):
         loan_grade_mapping = {"A": 0, "B": 1,
                               "C": 2, "D": 3, "E": 4, "F": 5, "G": 6}
         default_mapping = {"N": 0, "Y": 1}
+        gender_mapping = {"Male": 0, "Female": 1}
+        education_mapping = {"High School": 0,
+                             "Bachelor": 1, "Master": 2, "PhD": 3}
 
         df['person_home_ownership'] = df['person_home_ownership'].map(
             home_ownership_mapping)
@@ -148,13 +175,17 @@ if st.button("🔮 Predict Loan Approval", use_container_width=True):
         df['loan_grade'] = df['loan_grade'].map(loan_grade_mapping)
         df['cb_person_default_on_file'] = df['cb_person_default_on_file'].map(
             default_mapping)
+        df['person_gender'] = df['person_gender'].map(gender_mapping)
+        df['person_education'] = df['person_education'].map(education_mapping)
 
         # Ensure all data is numerical
         df = df.astype(float)
 
         # Make prediction
-        prediction = model.predict(df)[0]
-        probability = model.predict_proba(df)[0]
+        # Probability for approval (class 1)
+        prob = model.predict(df.values)[0][0]
+        prediction = 1 if prob > 0.5 else 0
+        probability = [1 - prob, prob]
 
         # Display results
         st.markdown("---")
