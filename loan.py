@@ -30,15 +30,16 @@ col1, col2 = st.columns(2)
 
 with col1:
     # Numerical inputs
-    loan_amount = st.number_input(
-        "Loan Amount ($)",
-        min_value=0,
-        value=100000,
-        step=10000,
-        help="Amount of loan requested"
+    person_age = st.number_input(
+        "Age",
+        min_value=18,
+        max_value=100,
+        value=30,
+        step=1,
+        help="Applicant's age"
     )
 
-    annual_income = st.number_input(
+    person_income = st.number_input(
         "Annual Income ($)",
         min_value=0,
         value=50000,
@@ -46,19 +47,8 @@ with col1:
         help="Applicant's annual income"
     )
 
-    credit_score = st.number_input(
-        "Credit Score",
-        min_value=300,
-        max_value=850,
-        value=650,
-        step=10,
-        help="Credit score (300-850)"
-    )
-
-with col2:
-    # Additional inputs
-    employment_years = st.number_input(
-        "Employment Years",
+    person_emp_length = st.number_input(
+        "Employment Length (years)",
         min_value=0,
         max_value=50,
         value=5,
@@ -66,20 +56,59 @@ with col2:
         help="Years of employment history"
     )
 
-    debt_to_income = st.slider(
-        "Debt-to-Income Ratio (%)",
-        min_value=0.0,
-        max_value=100.0,
-        value=30.0,
-        step=5.0,
-        help="Percentage of income going to debt"
+    loan_amnt = st.number_input(
+        "Loan Amount ($)",
+        min_value=0,
+        value=10000,
+        step=1000,
+        help="Amount of loan requested"
     )
 
-    loan_type = st.selectbox(
-        "Loan Type",
-        options=list(label_encoders.get('Loan_Type', {}).keys())
-        if 'Loan_Type' in label_encoders else ["Personal", "Home", "Auto", "Business"]
+with col2:
+    # Categorical inputs
+    person_home_ownership = st.selectbox(
+        "Home Ownership",
+        options=["RENT", "OWN", "MORTGAGE", "OTHER"],
+        help="Home ownership status"
     )
+
+    loan_intent = st.selectbox(
+        "Loan Intent",
+        options=["PERSONAL", "EDUCATION", "MEDICAL",
+                 "VENTURE", "HOMEIMPROVEMENT", "DEBTCONSOLIDATION"],
+        help="Purpose of the loan"
+    )
+
+    loan_grade = st.selectbox(
+        "Loan Grade",
+        options=["A", "B", "C", "D", "E", "F", "G"],
+        help="Loan grade based on creditworthiness"
+    )
+
+    cb_person_default_on_file = st.selectbox(
+        "Has Defaulted Before?",
+        options=["N", "Y"],
+        help="Has the person defaulted on a loan before?"
+    )
+
+# Additional numerical inputs
+loan_percent_income = st.slider(
+    "Loan Percent Income (%)",
+    min_value=0.0,
+    max_value=100.0,
+    value=10.0,
+    step=1.0,
+    help="Loan amount as percentage of annual income"
+)
+
+cb_person_cred_hist_length = st.number_input(
+    "Credit History Length (years)",
+    min_value=0,
+    max_value=50,
+    value=5,
+    step=1,
+    help="Length of credit history"
+)
 
 # Make prediction
 st.markdown("---")
@@ -88,19 +117,25 @@ if st.button("🔮 Predict Loan Approval", use_container_width=True):
     try:
         # Prepare input data
         input_data = {
-            'Loan_Amount': loan_amount,
-            'Annual_Income': annual_income,
-            'Credit_Score': credit_score,
-            'Employment_Years': employment_years,
-            'Debt_to_Income': debt_to_income,
-            'Loan_Type': loan_type
+            'person_age': person_age,
+            'person_income': person_income,
+            'person_home_ownership': person_home_ownership,
+            'person_emp_length': person_emp_length,
+            'loan_intent': loan_intent,
+            'loan_grade': loan_grade,
+            'loan_amnt': loan_amnt,
+            'loan_percent_income': loan_percent_income / 100,  # Convert to decimal
+            'cb_person_default_on_file': cb_person_default_on_file,
+            'cb_person_cred_hist_length': cb_person_cred_hist_length
         }
 
         # Create DataFrame
         df = pd.DataFrame([input_data])
 
-        # Encode categorical variables if needed
-        for col in df.columns:
+        # Encode categorical variables
+        categorical_cols = ['person_home_ownership',
+                            'loan_intent', 'loan_grade', 'cb_person_default_on_file']
+        for col in categorical_cols:
             if col in label_encoders:
                 df[col] = label_encoders[col].transform(df[col])
 
@@ -125,11 +160,11 @@ if st.button("🔮 Predict Loan Approval", use_container_width=True):
         st.markdown("#### 📋 Application Summary")
         summary_cols = st.columns(3)
         with summary_cols[0]:
-            st.metric("Loan Amount", f"${loan_amount:,.0f}")
+            st.metric("Loan Amount", f"${loan_amnt:,.0f}")
         with summary_cols[1]:
-            st.metric("Annual Income", f"${annual_income:,.0f}")
+            st.metric("Annual Income", f"${person_income:,.0f}")
         with summary_cols[2]:
-            st.metric("Credit Score", f"{credit_score}")
+            st.metric("Age", f"{person_age}")
 
     except Exception as e:
         st.error(f"⚠️ Error making prediction: {str(e)}")
