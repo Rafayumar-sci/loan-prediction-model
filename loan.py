@@ -139,6 +139,9 @@ if st.button("🔮 Predict Loan Approval", use_container_width=True):
             if col in label_encoders:
                 df[col] = label_encoders[col].transform(df[col])
 
+        # Ensure all data is numerical
+        df = df.astype(float)
+
         # Make prediction
         prediction = model.predict(df)[0]
         probability = model.predict_proba(df)[0]
